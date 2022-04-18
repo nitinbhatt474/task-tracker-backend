@@ -34,6 +34,14 @@ app.use((err, req, res, next) => {
 Auth(app, db);
 Tasks(app, db);
 
+app.get("*", (req, res) => {
+  res.send("<h1>Looks like you are lost</h1>");
+});
+
+app.post("*", (req, res) => {
+  res.send("Looks like you are lost");
+});
+
 app.listen(port, () => {
   console.log("Listening on http://localhost:" + port);
 });
