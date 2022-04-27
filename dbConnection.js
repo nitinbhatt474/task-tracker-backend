@@ -59,11 +59,28 @@ class DBConnection {
    * @returns the result whether the document was updated or not
    */
   updateOne = async (collection, document) => {
-    if (document.taskName === undefined) throw Error("The taskName is missing");
+    if (document._id === undefined) throw Error("The id of task is missing");
+    const id = document._id;
+    delete document._id;
     const result = await this.client
       .db(this.dbName)
       .collection(collection)
-      .updateOne({ taskName: document.taskName }, { $set: document });
+      .updateOne({ _id: ObjectId(id) }, { $set: document });
+    return result;
+  };
+
+  /**
+   * updates multiple documents which matches the filter query.
+   * @param {object} collection name of collection whose document is to be updated
+   * @param {object} filter condition of the documents to be updated
+   * @param {object} document the updated document with the taskName
+   * @returns the result whether the document was updated or not
+   */
+  updateMany = async (collection, filter, document) => {
+    const result = await this.client
+      .db(this.dbName)
+      .collection(collection)
+      .updateMany(filter, { $set: document });
     return result;
   };
 

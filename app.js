@@ -21,8 +21,10 @@ db.connect()
   });
 
 const app = express();
-app.use(cors());
+app.use(cors({ origin: "*" }));
 app.use(json());
+
+app.options("*", cors());
 
 app.use((err, req, res, next) => {
   if (err instanceof SyntaxError) {

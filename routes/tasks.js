@@ -1,11 +1,11 @@
 import { compare } from "bcrypt";
 import DBConnection from "../dbConnection.js";
 const validateRequest = async (req, db) => {
-  if (req.email === undefined || req.password === undefined)
-    return { valid: false, reason: "Credentials missing" };
-
-  const r = await db.find("users", { _id: req.email });
   try {
+    if (req.email === undefined || req.password === undefined)
+      return { valid: false, reason: "Credentials missing" };
+
+    const r = await db.find("users", { _id: req.email });
     if (r.length !== 1) return { valid: false, reason: "User not found" };
 
     const password = r[0].password;
@@ -27,9 +27,13 @@ const validateRequest = async (req, db) => {
 const Tasks = (app, db) => {
   //method to validate all the requests the server receives.
   app.post("/tasks/*", async (req, res, next) => {
-    const validity = await validateRequest(req.body, db);
-    if (validity.valid) next();
-    else res.json(validity);
+    try {
+      const validity = await validateRequest(req.body, db);
+      if (validity.valid) next();
+      else res.json(validity);
+    } catch (err) {
+      return { reason: "Invalid request", err };
+    }
   });
 
   app.post("/tasks/add-task", (req, res) => {
@@ -55,9 +59,28 @@ const Tasks = (app, db) => {
       .catch((err) => res.json({ updated: false, reason: err }));
   });
 
+  app.post("/tasks/update-tasks", (req, res) => {
+    const collection = req.body.email;
+    delete req.body.email;
+    delete req.body.password;
+    if (
+      req.body.hasOwnProperty("document") &&
+      req.body.hasOwnProperty("filter")
+    ) {
+      db.updateMany(collection, req.body.filter, req.body.document)
+        .then((r) => {
+          if (r.modifiedCount > 0) res.json({ updated: true });
+          else res.json({ updated: false, reason: "Unable to update tasks" });
+        })
+        .catch((err) => res.json({ updated: false, reason: err }));
+    } else res.json({ updated: false, reason: "Invalid data format" });
+  });
+
   app.post("/tasks/get-tasks", (req, res) => {
     const collection = req.body.email;
-    db.find(collection, {})
+    delete req.body.email;
+    delete req.body.password;
+    db.find(collection, req.body)
       .then((r) => res.json(r))
       .catch((err) => res.json({ err: err }));
   });

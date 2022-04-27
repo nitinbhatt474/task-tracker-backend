@@ -9,8 +9,10 @@ const Auth = (app, db) => {
     db.find("users", { _id: req.body.email })
       .then(async (r) => {
         try {
-          if (r.length !== 1)
+          if (r.length !== 1) {
             res.json({ loggedIn: false, reason: "User not found" });
+            return;
+          }
 
           const password = r[0].password;
           const validPassword = await compare(req.body.password, password);
@@ -18,10 +20,14 @@ const Auth = (app, db) => {
           if (validPassword) res.json({ loggedIn: true });
           else res.json({ loggedIn: false, reason: "Invalid Password" });
         } catch (err) {
+          console.log("Error inside login", err);
           res.json({ loggedIn: false, reason: "User not found", err });
         }
       })
-      .catch((err) => res.json({ loggedIn: false, reason: err }));
+      .catch((err) => {
+        console.log("Error ", err);
+        res.json({ loggedIn: false, reason: err });
+      });
   });
 
   app.post("/auth/register", async (req, res) => {
